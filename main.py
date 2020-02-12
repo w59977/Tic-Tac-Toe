@@ -20,8 +20,6 @@ Labels = {}
 wins = 0
 loses = 0
 gamesPlayed = 0
-winRate = 0
-loseRate = 0
 tieGames = 0
 timeWhenStarted = 0
 timeWhenEnded = 0
@@ -65,34 +63,32 @@ def nextTurn():
 
 
 def availableSpaces():
-    emptyArr = [] # creating array which will hold items like " "
+    emptyArr = []  # creating array which will hold items like " "
     for i in range(len(board)):
-        if (board[i] == " "): # if element is not X and/or O add this element to the empty array
+        if (board[i] == " "):  # if element is not X and/or O add this element to the empty array
             emptyArr.append(i)
     return emptyArr
 
 
 def clean():
     global board, timeWhenStarted
-    timeWhenStarted = pd.datetime.now() # current time
-    board = [" "] * 9 # cleaning the board
+    timeWhenStarted = pd.datetime.now()  # current time
+    board = [" "] * 9  # cleaning the board
     for x in range(3):
         for y in range(3):
-            addLabel(frame, " ", x, y) # cleaning the labels
+            addLabel(frame, " ", x, y)  # cleaning the labels
 
 
 def saveStats(winner):
-    global tieGames, wins, loses, winRate, loseRate, gamesPlayed, timeWhenStarted, timeWhenEnded, gameInfo
+    global tieGames, wins, loses, gamesPlayed, timeWhenStarted, timeWhenEnded, gameInfo
     if (winner == "X"):
-        wins += 1 # increasing number of wins
-        winRate = wins / (wins + loses) * 100 # calculating winrate
+        wins += 1  # increasing number of wins
     elif (winner == "O"):
         loses += 1
-        loseRate = loses / (wins + loses) * 100
     else:
         tieGames += 1
 
-    duration = timeWhenEnded - timeWhenStarted # calculation difference
+    duration = timeWhenEnded - timeWhenStarted  # calculation difference
     hours, remainder = divmod(duration.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     gamesPlayed = wins + loses + tieGames
@@ -100,25 +96,27 @@ def saveStats(winner):
     if (winner == " "):
         winner = "Tie"
 
-
     gameInfo[gamesPlayed] = {"Game №": gamesPlayed, "Game result": winner if winner ==
                              "Tie" else winner + " won", "Duration": str(minutes) + "min" + ":" + str(seconds) + "sec"}
 
 
 def click(label, x, y):
     global turn, timeWhenEnded
-    label["text"] = turn # changing text of label to turn (X or O)
-    board[x + y * 3] = turn # changing array's element to turn e.g. if x = 1, y = 2 then 1 + 2 * 3 = 7 that means board[7] = turn (x or O)
-    label.unbind("<Button-1>") # once label is clicked it cannot be clicked again
-    winner = findWinner(board) # finding winner
-    if (len((availableSpaces())) == 0 and winner == " "): # if the length of board == 0 and winner = " " then its a tie game
-        timeWhenEnded = pd.datetime.now() # saving time
-        messagebox.showinfo("Tie", "it's a tie...") # popup with a message
-        unbindLabels() # making all label unclickable
-        showStatsBtn.pack() # show button to see stats
-        cleanBtn.pack() # show button to clear board
-        saveStats(winner) # saving game data
-        turn = None 
+    label["text"] = turn  # changing text of label to turn (X or O)
+    # changing array's element to turn e.g. if x = 1, y = 2 then 1 + 2 * 3 = 7 that means board[7] = turn (x or O)
+    board[x + y * 3] = turn
+    # once label is clicked it cannot be clicked again
+    label.unbind("<Button-1>")
+    winner = findWinner(board)  # finding winner
+    # if the length of board == 0 and winner = " " then its a tie game
+    if (len((availableSpaces())) == 0 and winner == " "):
+        timeWhenEnded = pd.datetime.now()  # saving time
+        messagebox.showinfo("Tie", "it's a tie...")  # popup with a message
+        unbindLabels()  # making all label unclickable
+        showStatsBtn.pack()  # show button to see stats
+        cleanBtn.pack()  # show button to clear board
+        saveStats(winner)  # saving game data
+        turn = None
     if (winner != " "):
         timeWhenEnded = pd.datetime.now()
         messagebox.showinfo("Win!", winner + " has won!")
@@ -127,15 +125,15 @@ def click(label, x, y):
         showStatsBtn.pack()
         cleanBtn.pack()
         turn = None
-    nextTurn() # proceed to next turn (computer or user)
+    nextTurn()  # proceed to next turn (computer or user)
 
 
 def unbindLabels():
-    for label in frame.winfo_children(): # in labels
-        label.unbind("<Button-1>") # removing click event
+    for label in frame.winfo_children():  # in labels
+        label.unbind("<Button-1>")  # removing click event
 
 
-def addLabel(frame, text, x, y): # creating squares
+def addLabel(frame, text, x, y):  # creating squares
     label = Label(
         frame,
         text=text,
@@ -188,7 +186,7 @@ def showStats():
 
     for stat in gameInfo:
         text = str(gameInfo[stat]).replace(
-            "{", "").replace("}", "").replace("'", "") # removing unnecessary chars
+            "{", "").replace("}", "").replace("'", "")  # removing unnecessary chars
         statLabel = Label(
             statsFrame,
             text=text,
@@ -197,10 +195,14 @@ def showStats():
         )
         statLabel.pack()
 
-    # winrate, loserate display STARTING POINT
-    if (wins != 0 or loses != 0): # if wins or loses = 0 no point to display chart
-        labels = 'Winrate', 'Loserate'
-        sizes = [winRate,  loseRate]
+    # wins, loses display STARTING POINT
+    if (wins != 0 or loses != 0):  # if wins or loses = 0 no point to display chart
+        if (tieGames != 0):
+            labels = 'Wins', 'Loses', 'Tie games'
+            sizes = [wins, loses, tieGames]
+        else:
+            labels = 'Wins', 'Loses'
+            sizes = [wins, loses]
         fig1, ax1 = plt.subplots()
         ax1.pie(sizes, labels=labels,
                 autopct='%1.1f%%', startangle=90, radius=0.5)
@@ -210,7 +212,7 @@ def showStats():
         pieCanvas = FigureCanvasTkAgg(fig1, master=statsWindow)
         pieCanvas.get_tk_widget().pack()
         pieCanvas.draw()
-    # winrate, loserate display ENDING POINT
+    # wins, loses display ENDING POINT
 
     statsFrame.pack()
     statsFrame.mainloop()
